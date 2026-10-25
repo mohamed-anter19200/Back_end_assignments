@@ -1,0 +1,173 @@
+
+use Assignment_7
+
+db.createCollection("books", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["title"],
+      properties: {
+        title: {
+          bsonType: "string",
+          minLength: 1,
+          pattern: ".*\\S.*"
+        }
+      }
+    }
+  }
+})
+
+db.authors.insertOne({
+  name: "George Orwell",
+  country: "England"
+})
+
+
+db.createCollection("logs", {
+  capped: true,
+  size: 1024 * 1024
+})
+
+
+db.books.createIndex({ title: 1 })
+
+
+db.books.insertOne({
+  title: "Future",
+  author: "John Doe",
+  year: 2020,
+  genres: ["Science Fiction"]
+})
+
+
+db.books.insertMany([
+  {
+    title: "Brave New World",
+    author: "Aldous Huxley",
+    year: 1998,
+    genres: ["Science Fiction", "Dystopian"]
+  },
+  {
+    title: "Dune",
+    author: "Frank Herbert",
+    year: 2005,
+    genres: ["Science Fiction", "Adventure"]
+  },
+  {
+    title: "It",
+    author: "Stephen King",
+    year: 1986,
+    genres: ["Horror"]
+  },
+  {
+    title: "The Road",
+    author: "Cormac McCarthy",
+    year: 2006,
+    genres: ["Drama"]
+  }
+])
+
+
+db.logs.insertOne({
+  bookId: ObjectId("671000000000000000000001"),
+  level: "info",
+  message: "Book created",
+  createdAt: new Date()
+})
+
+
+db.books.updateOne(
+  { title: "Future" },
+  { $set: { year: 2022 } }
+)
+
+
+db.books.findOne({
+  title: "Brave New World"
+})
+
+
+db.books.find({
+  year: {
+    $gte: 1990,
+    $lte: 2010
+  }
+})
+
+
+db.books.find({
+  genres: "Science Fiction"
+})
+
+
+db.books.find()
+  .sort({ year: -1 })
+  .skip(2)
+  .limit(3)
+
+
+db.books.find({
+  year: { $type: "int" }
+})
+
+
+db.books.find({
+  genres: {
+    $nin: ["Horror", "Science Fiction"]
+  }
+})
+
+
+ db.books.deleteMany({
+  year: { $lt: 2000 }
+})
+
+
+db.books.aggregate([
+  {
+    $match: {
+      year: { $gt: 2000 }
+    }
+  },
+  {
+    $sort: {
+      year: -1
+    }
+  }
+])
+
+
+db.books.aggregate([
+  {
+    $match: {
+      year: { $gt: 2000 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      title: 1,
+      author: 1,
+      year: 1
+    }
+  }
+])
+
+
+db.books.aggregate([
+  {
+    $unwind: "$genres"
+  }
+])
+
+
+db.books.aggregate([
+  {
+    $lookup: {
+      from: "logs",
+      localField: "_id",
+      foreignField: "bookId",
+      as: "logs"
+    }
+  }
+])
